@@ -140,8 +140,10 @@ export default function StudentsPage() {
           dob: new Date(data.dob),
           status: 'active', // กำหนดค่า default เป็น 'active'
         })
-        toast.success('เพิ่มนักศึกษาใหม่สำเร็จ')
+        toast.success('เพิ่มนักศึกษาใหม่สำเร็จแล้ว')
       }
+      
+
       
       setShowForm(false)
       setSelectedStudent(null)
