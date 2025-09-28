@@ -1,0 +1,48 @@
+// Firestore Security Rules
+// ไฟล์นี้กำหนดกฎความปลอดภัยสำหรับ Firestore Database
+// เปิดให้ใช้งานได้ทั้งหมดสำหรับผู้ใช้ที่เข้าสู่ระบบแล้ว
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ฟังก์ชันสำหรับตรวจสอบการเข้าสู่ระบบ
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Collection: users
+    // จัดการข้อมูลผู้ใช้ในระบบ
+    match /users/{userId} {
+      // ให้ผู้ใช้ที่เข้าสู่ระบบแล้วทำได้ทุกอย่าง
+      allow read, write: if isAuthenticated();
+    }
+
+    // Collection: students
+    // จัดการข้อมูลนักศึกษา
+    match /students/{studentId} {
+      // ให้ผู้ใช้ที่เข้าสู่ระบบแล้วทำได้ทุกอย่าง
+      allow read, write: if isAuthenticated();
+    }
+
+    // Collection: courses
+    // จัดการข้อมูลรายวิชา
+    match /courses/{courseId} {
+      // ให้ผู้ใช้ที่เข้าสู่ระบบแล้วทำได้ทุกอย่าง
+      allow read, write: if isAuthenticated();
+    }
+
+    // Collection: enrollments
+    // จัดการข้อมูลการลงทะเบียนเรียน
+    match /enrollments/{enrollmentId} {
+      // ให้ผู้ใช้ที่เข้าสู่ระบบแล้วทำได้ทุกอย่าง
+      allow read, write: if isAuthenticated();
+    }
+
+    // Collection: audit_logs (optional)
+    // จัดการข้อมูล audit log
+    match /audit_logs/{logId} {
+      // ให้ผู้ใช้ที่เข้าสู่ระบบแล้วทำได้ทุกอย่าง
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

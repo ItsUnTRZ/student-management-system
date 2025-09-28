@@ -1,70 +1,178 @@
-# Getting Started with Create React App
+# ระบบจัดการนักศึกษา (Student Management System)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+ระบบจัดการข้อมูลนักศึกษาและผลการเรียนที่พัฒนาด้วย Next.js, Firebase และ Tailwind CSS
 
-## Available Scripts
+## 🚀 คุณสมบัติหลัก
 
-In the project directory, you can run:
+- **ระบบ Authentication** - เข้าสู่ระบบด้วย Firebase Auth
+- **จัดการนักศึกษา** - CRUD operations สำหรับข้อมูลนักศึกษา
+- **จัดการเกรด** - บันทึกและคำนวณเกรดเฉลี่ย
+- **ใบแสดงผลการเรียน** - สร้างและดูใบแสดงผลการเรียน
+- **รายงานสถิติ** - แสดงสถิติและรายงานต่างๆ
+- **ระบบสิทธิ์** - แยกสิทธิ์ Admin และ Staff
 
-### `npm start`
+## 📋 หน้าต่างๆ ในระบบ (11 หน้า)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. **หน้าเข้าสู่ระบบ** (`/login`)
+2. **หน้าลงทะเบียน** (`/register`)
+3. **รายชื่อนักศึกษา** (`/students`)
+4. **ค้นหานักศึกษา** (`/students/search`)
+5. **รายละเอียดนักศึกษา** (`/students/[id]`)
+6. **จัดการเกรด** (`/grades`)
+7. **จัดการการลงทะเบียน** (`/enrollments`)
+8. **ใบแสดงผลการเรียน** (`/transcripts`)
+9. **รายงานสถิติ** (`/reports`)
+10. **จัดการผู้ใช้** (`/users`)
+11. **ตั้งค่าระบบ** (`/settings`)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠 เทคโนโลยีที่ใช้
 
-### `npm test`
+- **Next.js 15** - React Framework
+- **TypeScript** - Type Safety
+- **Tailwind CSS** - Styling
+- **Firebase Auth** - Authentication
+- **Cloud Firestore** - Database
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🎯 วัตถุประสงค์
 
-### `npm run build`
+โปรเจคนี้เป็นระบบจัดการนักศึกษาสำหรับการพัฒนาและเรียนรู้เท่านั้น ไม่ได้ออกแบบสำหรับการ deploy ไปยัง production server
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 การติดตั้งและรัน
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 1. Clone Repository
+```bash
+git clone https://github.com/YOUR_USERNAME/student-management-system.git
+cd student-management-system
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 2. ติดตั้ง Dependencies
+```bash
+npm install
+```
 
-### `npm run eject`
+### 3. ตั้งค่า Environment Variables
+```bash
+# คัดลอกไฟล์ตัวอย่าง
+cp env.local.example .env.local
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# แก้ไขไฟล์ .env.local ด้วยค่าจริงจาก Firebase Console
+# หรือใช้ค่าตัวอย่างที่ให้มาได้เลย (สำหรับการทดสอบ)
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 4. ตั้งค่า Firebase
+1. สร้าง Firebase Project
+2. เปิดใช้งาน Authentication (Email/Password)
+3. เปิดใช้งาน Firestore Database
+4. ตั้งค่า Security Rules จากไฟล์ `firestore.rules`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+**ดูคู่มือการตั้งค่าละเอียดได้ที่ [SETUP_GUIDE.md](./SETUP_GUIDE.md)**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 5. รัน Development Server
+```bash
+npm run dev
+```
 
-## Learn More
+เปิดเบราว์เซอร์ไปที่ [http://localhost:3000](http://localhost:3000)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 6. ตั้งค่าข้อมูลเริ่มต้น (Optional)
+```bash
+# รัน seed script เพื่อเพิ่มข้อมูลตัวอย่าง
+npm run seed
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## ⚡ เริ่มต้นใช้งานได้ทันที
 
-### Code Splitting
+หากต้องการทดสอบระบบทันที:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. **ใช้ค่าตัวอย่าง**: ไฟล์ `env.local.example` มีค่าตัวอย่างที่พร้อมใช้งาน
+2. **สร้าง Firebase Project**: ตามคู่มือใน SETUP_GUIDE.md
+3. **แก้ไขไฟล์ .env.local**: ใส่ค่าจริงจาก Firebase Console
+4. **รัน `npm run dev`**: เริ่มใช้งานได้เลย!
 
-### Analyzing the Bundle Size
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
+## 📁 โครงสร้างโปรเจค
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```
+src/
+├── app/                 # Next.js App Router
+├── components/          # React Components
+│   ├── ui/             # UI Components
+│   ├── layout/         # Layout Components
+│   └── students/       # Student Components
+├── contexts/           # React Contexts
+├── lib/                # Utilities and Services
+│   ├── __tests__/      # Test files
+│   ├── firebase.ts     # Firebase config
+│   ├── auth.ts         # Auth service
+│   ├── firestore.ts    # Firestore service
+│   └── gpaCalculator.ts # GPA calculation
+└── types/              # TypeScript types
+```
 
-### Advanced Configuration
+## 🔐 ระบบความปลอดภัย
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- Firebase Security Rules (เปิดให้ใช้งานได้ทั้งหมด)
+- Form Validation
+- Input Sanitization
 
-### Deployment
+## 📊 ข้อมูลและโครงสร้าง
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Collections ใน Firestore
+- **users** - ข้อมูลผู้ใช้ในระบบ
+- **students** - ข้อมูลนักศึกษา
+- **courses** - ข้อมูลรายวิชา
+- **enrollments** - ข้อมูลการลงทะเบียนเรียน
 
-### `npm run build` fails to minify
+## 🎨 UI/UX Features
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Responsive Design
+- Modern UI with Tailwind CSS
+- Loading States
+- Error Handling
+- Form Validation
+
+## 🚀 Performance
+
+- Code Splitting
+- Image Optimization
+- Firebase Caching
+- Bundle Analysis
+
+## 🐛 การแก้ไขปัญหา
+
+### ปัญหาที่พบบ่อย
+
+1. **Firebase Connection Error**
+   - ตรวจสอบ Firebase config
+   - ตรวจสอบ API keys ใน .env.local
+
+2. **Build Error**
+   - ลบ node_modules และติดตั้งใหม่
+   - ตรวจสอบ TypeScript errors
+
+3. **Authentication Error**
+   - ตรวจสอบ Firebase Auth settings
+   - ตรวจสอบ Authorized domains
+
+## 📝 การพัฒนาต่อ
+
+### การเพิ่มฟีเจอร์ใหม่
+1. สร้าง Component ใหม่
+2. เพิ่ม Type definitions
+3. เพิ่ม Service functions
+4. เพิ่ม Tests
+5. อัปเดต Firestore rules
+
+## 📄 License
+
+MIT License
+
+## 👥 ผู้พัฒนา
+
+- **Developer**: [ชื่อผู้พัฒนา]
+- **Email**: [email@example.com]
+
+---
+
+**หมายเหตุ**: ระบบนี้พัฒนาสำหรับการศึกษาและใช้งานจริง สามารถปรับแต่งและพัฒนาต่อได้ตามความต้องการ
