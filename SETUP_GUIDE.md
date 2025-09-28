@@ -9,7 +9,7 @@
 
 ### 1. โคลนโปรเจค
 ```bash
-git clone https://github.com/YOUR_USERNAME/student-management-system.git
+git clone https://github.com/itsuntrz/student-management-system.git
 cd student-management-system
 ```
 
