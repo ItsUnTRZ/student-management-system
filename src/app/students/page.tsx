@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import Layout from '@/components/layout/Layout'
@@ -67,14 +67,18 @@ export default function StudentsPage() {
 
   // ฟังก์ชันสำหรับค้นหา
   const handleSearch = useCallback((query: string) => {
-    setFilters(prev => ({ ...prev, search: query }))
-    setPagination(prev => ({ ...prev, page: 1 }))
+    startTransition(() => {
+      setFilters(prev => ({ ...prev, search: query }))
+      setPagination(prev => ({ ...prev, page: 1 }))
+    })
   }, [])
 
   // ฟังก์ชันสำหรับอัปเดตตัวกรอง
   const handleFiltersChange = useCallback((newFilters: StudentFilters) => {
-    setFilters(newFilters)
-    setPagination(prev => ({ ...prev, page: 1 }))
+    startTransition(() => {
+      setFilters(newFilters)
+      setPagination(prev => ({ ...prev, page: 1 }))
+    })
   }, [])
 
   // ฟังก์ชันสำหรับรีเซ็ตตัวกรอง
@@ -118,11 +122,24 @@ export default function StudentsPage() {
       
       if (selectedStudent) {
         // แก้ไขข้อมูลนักศึกษา
-        await updateStudent(selectedStudent.id, data)
+        if (!data.dob) {
+          throw new Error('กรุณาระบุวันเกิด');
+        }
+        await updateStudent(selectedStudent.id, {
+          ...data,
+          dob: new Date(data.dob),
+        })
         toast.success('อัปเดตข้อมูลนักศึกษาสำเร็จ')
       } else {
         // เพิ่มนักศึกษาใหม่
-        await createStudent(data)
+        if (!data.dob) {
+          throw new Error('กรุณาระบุวันเกิด');
+        }
+        await createStudent({
+          ...data,
+          dob: new Date(data.dob),
+          status: 'active', // กำหนดค่า default เป็น 'active'
+        })
         toast.success('เพิ่มนักศึกษาใหม่สำเร็จ')
       }
       

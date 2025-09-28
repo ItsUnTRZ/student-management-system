@@ -43,15 +43,15 @@ const FilterPanel: React.FC<FilterPanelProps> = memo(({
   onFiltersChange,
   onReset,
 }) => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
-  // ฟังก์ชันสำหรับอัปเดตตัวกรอง
+  // Update filters immediately on input change
   const updateFilter = useCallback((field: keyof StudentFilters, value: any) => {
     onFiltersChange({
       ...filters,
       [field]: value,
-    })
-  }, [filters, onFiltersChange])
+    });
+  }, [filters, onFiltersChange]);
 
   // ฟังก์ชันสำหรับรีเซ็ตตัวกรอง
   const handleReset = useCallback(() => {
