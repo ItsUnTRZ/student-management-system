@@ -1,5 +1,5 @@
 // Layout Component
-// ไฟล์นี้สร้าง layout หลักของแอปที่รวม Header, Sidebar และเนื้อหา
+// ไฟล์นี้สร้าง layout หลักของแอปที่รวม Sidebar และเนื้อหา
 
 'use client'
 
@@ -21,11 +21,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* Sidebar - Fixed position */}
+      <aside className="fixed left-0 top-0 h-screen w-[260px] z-50">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </aside>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+      {/* Main content - with left margin to account for sidebar */}
+      <main className="ml-[260px] p-6 max-w-none">
         {/* Header */}
         <Header 
           onMenuClick={toggleSidebar} 
@@ -33,12 +35,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
 
         {/* Page content */}
-        <main className="py-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
-      </div>
+        <div className="mt-6">
+          {children}
+        </div>
+      </main>
     </div>
   )
 }

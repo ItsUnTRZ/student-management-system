@@ -1,0 +1,82 @@
+[
+  {
+    "courseId": "CS101",
+    "name": "Computer Programming",
+    "credits": 3,
+    "instructor": "อ.สมชาย ใจดี",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "CS102",
+    "name": "Data Structures",
+    "credits": 3,
+    "instructor": "อ.สมหญิง รักการเรียน",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "CS201",
+    "name": "Database Systems",
+    "credits": 3,
+    "instructor": "อ.พิมพ์ใจ เก่งมาก",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "CS202",
+    "name": "Web Development",
+    "credits": 3,
+    "instructor": "อ.ชาญชัย โค้ดดี",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "CS301",
+    "name": "Software Engineering",
+    "credits": 3,
+    "instructor": "อ.วิชาญ พัฒนา",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "CS302",
+    "name": "Mobile App Development",
+    "credits": 3,
+    "instructor": "อ.สมาร์ท โฟนดี",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "MATH101",
+    "name": "Calculus I",
+    "credits": 3,
+    "instructor": "อ.สมศรี เลขาคณิต",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "MATH102",
+    "name": "Statistics",
+    "credits": 3,
+    "instructor": "อ.ปัญญา วิเคราะห์",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "ENG101",
+    "name": "English for Communication",
+    "credits": 3,
+    "instructor": "อ.จอห์น สมิธ",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  },
+  {
+    "courseId": "PHY101",
+    "name": "Physics I",
+    "credits": 3,
+    "instructor": "อ.นิวตัน แรงดึงดูด",
+    "createdAt": "2025-10-04T10:00:00Z",
+    "updatedAt": "2025-10-04T10:00:00Z"
+  }
+]

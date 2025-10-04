@@ -6,7 +6,7 @@
 import { Student } from '@/types'
 import { Edit, Eye, Trash2, User } from 'lucide-react'
 import Button from '../ui/Button'
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react'
 
 interface StudentTableProps {
   students: Student[]
@@ -17,7 +17,7 @@ interface StudentTableProps {
 }
 
 // Component สำหรับแสดงตารางนักศึกษา
-const StudentTable: React.FC<StudentTableProps> = memo(({
+const StudentTable: React.FC<StudentTableProps> = ({
   students,
   onView,
   onEdit,
@@ -26,6 +26,32 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
 }) => {
   const [sortField, setSortField] = useState<keyof Student>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const previousStudentsRef = useRef<Student[]>([])
+  const [displayStudents, setDisplayStudents] = useState<Student[]>(students)
+  
+  // สร้าง stable key สำหรับแต่ละ student เพื่อป้องกันการ re-render
+  const stableStudents = useMemo(() => {
+    return displayStudents.map((student, index) => ({
+      ...student,
+      stableKey: `${student.id}-${student.studentId}-${index}`,
+      index // เพิ่ม index เพื่อความเสถียร
+    }))
+  }, [displayStudents])
+
+  // ใช้ effect เพื่อ stabilize การแสดงผลข้อมูล
+  useEffect(() => {
+    // ถ้าเป็น initial loading หรือไม่มีข้อมูลเลย ให้อัปเดตทันที
+    if (loading || students.length === 0) {
+      setDisplayStudents(students)
+      return
+    }
+    
+    // ถ้ามีข้อมูลใหม่ ให้อัปเดตทันที
+    if (students && students.length > 0) {
+      setDisplayStudents(students)
+      previousStudentsRef.current = students
+    }
+  }, [students, loading])
 
   // ฟังก์ชันสำหรับเรียงลำดับข้อมูล
   const handleSort = useCallback((field: keyof Student) => {
@@ -37,9 +63,11 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
     }
   }, [sortField, sortDirection])
 
-  // เรียงลำดับข้อมูล
+  // เรียงลำดับข้อมูล - ใช้ stableStudents แทน displayStudents
   const sortedStudents = useMemo(() => {
-    return [...students].sort((a, b) => {
+    if (!stableStudents || stableStudents.length === 0) return []
+    
+    return [...stableStudents].sort((a, b) => {
       const aValue = a[sortField]
       const bValue = b[sortField]
       
@@ -47,7 +75,7 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
       return 0
     })
-  }, [students, sortField, sortDirection])
+  }, [stableStudents, sortField, sortDirection])
 
   // ฟังก์ชันสำหรับแสดงสถานะ
   const getStatusBadge = useCallback((status: string) => {
@@ -66,7 +94,7 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
     )
   }, [])
 
-  if (loading) {
+  if (loading && displayStudents.length === 0) {
     return (
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
@@ -81,38 +109,38 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
   }
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+    <div className="bg-white shadow rounded-lg overflow-hidden transition-all duration-200">
       {/* Desktop table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('studentId')}
               >
                 รหัสนักศึกษา
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('name')}
               >
                 ชื่อ-นามสกุล
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('major')}
               >
                 สาขาวิชา
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('year')}
               >
                 ชั้นปี
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('status')}
               >
                 สถานะ
@@ -124,7 +152,7 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedStudents.map((student) => (
-              <tr key={student.id} className="hover:bg-gray-50">
+              <tr key={student.stableKey} className="hover:bg-gray-50 transition-colors duration-150">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {student.studentId}
                 </td>
@@ -175,7 +203,7 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
       {/* Mobile cards */}
       <div className="md:hidden">
         {sortedStudents.map((student) => (
-          <div key={student.id} className="border-b border-gray-200 p-4">
+          <div key={student.stableKey} className="border-b border-gray-200 p-4 transition-colors duration-150 hover:bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
@@ -220,7 +248,7 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
       </div>
 
       {/* Empty state */}
-      {students.length === 0 && (
+      {displayStudents.length === 0 && !loading && (
         <div className="text-center py-12">
           <User className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">ไม่มีข้อมูลนักศึกษา</h3>
@@ -229,8 +257,16 @@ const StudentTable: React.FC<StudentTableProps> = memo(({
       )}
     </div>
   )
-})
+}
 
 StudentTable.displayName = 'StudentTable'
 
-export default StudentTable
+// เพิ่ม comparison function เพื่อป้องกัน unnecessary re-renders
+export default memo(StudentTable, (prevProps, nextProps) => {
+  // เปรียบเทียบเฉพาะสิ่งที่สำคัญ
+  return (
+    prevProps.loading === nextProps.loading &&
+    prevProps.students.length === nextProps.students.length &&
+    JSON.stringify(prevProps.students) === JSON.stringify(nextProps.students)
+  )
+})

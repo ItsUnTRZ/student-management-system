@@ -6,7 +6,7 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { LogOut, User, Menu } from 'lucide-react'
 import Button from '../ui/Button'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -20,6 +20,21 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // ปิด dropdown เมื่อคลิกข้างนอก
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -30,22 +45,11 @@ const Header: React.FC<HeaderProps> = ({
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="px-4 sm:px-6 lg:px-8">
+    <header className="bg-white shadow-sm border-b border-gray-200 mb-6">
+      <div className="px-6">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Menu button and title */}
           <div className="flex items-center">
-            {showMenuButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onMenuClick}
-                className="mr-3 lg:hidden"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-            )}
-            
             <h1 className="text-xl font-semibold text-gray-900">
               ระบบจัดการนักศึกษา
             </h1>
@@ -54,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Right side - User menu */}
           <div className="flex items-center space-x-4">
             {user && (
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -67,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({
 
                 {/* User dropdown menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-200">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{user.name}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>
@@ -78,9 +82,9 @@ const Header: React.FC<HeaderProps> = ({
                     
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
+                      <LogOut className="w-4 h-4 mr-3" />
                       ออกจากระบบ
                     </button>
                   </div>

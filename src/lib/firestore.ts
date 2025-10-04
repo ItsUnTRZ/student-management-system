@@ -34,6 +34,33 @@ const convertToTimestamp = (date: Date) => {
   return Timestamp.fromDate(date)
 }
 
+// ฟังก์ชันสำหรับจัดการ Firestore Index Error
+const handleIndexError = (error: any, operationName: string): Error => {
+  if (error.code === 'failed-precondition') {
+    console.warn(`⚠️  Firestore Index Required for ${operationName}:`, error.message)
+    
+    // ดึง URL สำหรับสร้าง index จาก error message
+    const indexUrl = error.message.match(/https:\/\/[^\s]+/)
+    
+    if (indexUrl) {
+      console.log('🔗 Create index at:', indexUrl[0])
+      return new Error(`
+❌ ต้องการสร้าง Firestore Index สำหรับ ${operationName}
+
+🔧 วิธีแก้ไข:
+1. คลิกลิงก์นี้: ${indexUrl[0]}
+2. หรือใช้คำสั่ง: firebase deploy --only firestore:indexes
+
+💡 เคล็ดลับ: ระบบจะใช้ client-side filtering แทนในขณะนี้
+      `)
+    }
+    
+    return new Error(`ต้องการสร้าง Firestore Index สำหรับ ${operationName}`)
+  }
+  
+  return error
+}
+
 // ==================== STUDENT OPERATIONS ====================
 
 // สร้างนักศึกษาใหม่
@@ -82,66 +109,85 @@ export const getStudents = async (
   pagination: { page: number; limit: number }
 ): Promise<{ students: Student[]; pagination: Pagination }> => {
   try {
-    let q = query(collection(db, 'students'))
+    // แก้ไข: ใช้ client-side filtering เพื่อหลีกเลี่ยง composite index
+    // เหตุผล: query ที่มี where หลายตัว + orderBy ต้องการ composite index ที่ซับซ้อน
+    // การใช้ client-side filtering ทำให้ยืดหยุ่นมากขึ้นและลดความซับซ้อนของ index
+    
+    let q = query(collection(db, 'students'), orderBy('name'))
 
-    // เพิ่มเงื่อนไขการกรอง
-    if (filters.major) {
-      q = query(q, where('major', '==', filters.major))
+    try {
+      // ดึงข้อมูลทั้งหมดด้วย query ง่ายๆ
+      const querySnapshot = await getDocs(q)
+      let students: Student[] = []
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data()
+        students.push({
+          id: doc.id,
+          ...data,
+          dob: convertTimestamp(data.dob),
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+        } as Student)
+      })
+
+      // Client-side filtering ทุกเงื่อนไข
+      const filteredStudents = students.filter((student) => {
+        // กรองตาม search
+        if (filters.search) {
+          const searchTerm = filters.search.toLowerCase()
+          const matchesSearch = (
+            student.name.toLowerCase().includes(searchTerm) ||
+            student.studentId.toLowerCase().includes(searchTerm) ||
+            student.major.toLowerCase().includes(searchTerm)
+          )
+          if (!matchesSearch) return false
+        }
+
+        // กรองตาม major
+        if (filters.major && student.major !== filters.major) {
+          return false
+        }
+
+        // กรองตาม year
+        if (filters.year && student.year !== filters.year) {
+          return false
+        }
+
+        // กรองตาม status
+        if (filters.status && student.status !== filters.status) {
+          return false
+        }
+
+        return true
+      })
+
+      // Pagination
+      const total = filteredStudents.length
+      const totalPages = Math.ceil(total / pagination.limit)
+      const offset = (pagination.page - 1) * pagination.limit
+      const paginatedStudents = filteredStudents.slice(offset, offset + pagination.limit)
+
+      return {
+        students: paginatedStudents,
+        pagination: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total,
+          totalPages,
+        },
+      }
+
+    } catch (queryError: any) {
+      // ตรวจจับ error เฉพาะ failed-precondition (missing index)
+      if (queryError.code === 'failed-precondition') {
+        const indexError = handleIndexError(queryError, 'การกรองนักศึกษา')
+        throw indexError
+      }
+      
+      throw queryError
     }
-    if (filters.year) {
-      q = query(q, where('year', '==', filters.year))
-    }
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status))
-    }
 
-    // เรียงลำดับตามชื่อ
-    q = query(q, orderBy('name'))
-
-    // ดึงข้อมูลทั้งหมดเพื่อนับจำนวน
-    const allDocs = await getDocs(q)
-    const total = allDocs.size
-    const totalPages = Math.ceil(total / pagination.limit)
-
-    // คำนวณ offset สำหรับการแบ่งหน้า
-    const offset = (pagination.page - 1) * pagination.limit
-    q = query(q, limit(pagination.limit))
-
-    // ดึงข้อมูลตามหน้าที่กำหนด
-    const querySnapshot = await getDocs(q)
-    const students: Student[] = []
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data()
-      students.push({
-        id: doc.id,
-        ...data,
-        dob: convertTimestamp(data.dob),
-        createdAt: convertTimestamp(data.createdAt),
-        updatedAt: convertTimestamp(data.updatedAt),
-      } as Student)
-    })
-
-    // กรองด้วยคำค้นหา (client-side filtering)
-    const filteredStudents = students.filter((student) => {
-      if (!filters.search) return true
-      const searchTerm = filters.search.toLowerCase()
-      return (
-        student.name.toLowerCase().includes(searchTerm) ||
-        student.studentId.toLowerCase().includes(searchTerm) ||
-        student.major.toLowerCase().includes(searchTerm)
-      )
-    })
-
-    return {
-      students: filteredStudents,
-      pagination: {
-        page: pagination.page,
-        limit: pagination.limit,
-        total,
-        totalPages,
-      },
-    }
   } catch (error: any) {
     throw new Error(`Failed to get students: ${error.message}`)
   }
@@ -244,25 +290,64 @@ export const createEnrollment = async (enrollmentData: Omit<Enrollment, 'id' | '
 // ดึงรายการการลงทะเบียนเรียนของนักศึกษา
 export const getStudentEnrollments = async (studentId: string): Promise<Enrollment[]> => {
   try {
-    const q = query(
-      collection(db, 'enrollments'),
-      where('studentId', '==', studentId),
-      orderBy('term', 'desc')
-    )
-    const querySnapshot = await getDocs(q)
-    const enrollments: Enrollment[] = []
+    // ลองใช้ query ที่มี composite index ก่อน
+    try {
+      const q = query(
+        collection(db, 'enrollments'),
+        where('studentId', '==', studentId),
+        orderBy('term', 'desc')
+      )
+      const querySnapshot = await getDocs(q)
+      const enrollments: Enrollment[] = []
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data()
-      enrollments.push({
-        id: doc.id,
-        ...data,
-        createdAt: convertTimestamp(data.createdAt),
-        updatedAt: convertTimestamp(data.updatedAt),
-      } as Enrollment)
-    })
+      querySnapshot.forEach((doc) => {
+        const data = doc.data()
+        enrollments.push({
+          id: doc.id,
+          ...data,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+        } as Enrollment)
+      })
 
-    return enrollments
+      return enrollments
+
+    } catch (queryError: any) {
+      // ตรวจจับ error failed-precondition
+      if (queryError.code === 'failed-precondition') {
+        console.warn('⚠️  Enrollment Index Missing, using fallback query')
+        
+        // Fallback: query แบบง่าย + sort ใน client
+        const q = query(
+          collection(db, 'enrollments'),
+          where('studentId', '==', studentId)
+        )
+        const querySnapshot = await getDocs(q)
+        const enrollments: Enrollment[] = []
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          enrollments.push({
+            id: doc.id,
+            ...data,
+            createdAt: convertTimestamp(data.createdAt),
+            updatedAt: convertTimestamp(data.updatedAt),
+          } as Enrollment)
+        })
+
+        // Client-side sorting
+        enrollments.sort((a, b) => b.term.localeCompare(a.term))
+        
+        // แสดงคำแนะนำสร้าง index (ไม่ throw error เพราะมี fallback)
+        const indexError = handleIndexError(queryError, 'การเรียงลำดับการลงทะเบียน')
+        console.warn(indexError.message)
+
+        return enrollments
+      }
+      
+      throw queryError
+    }
+
   } catch (error: any) {
     throw new Error(`Failed to get student enrollments: ${error.message}`)
   }

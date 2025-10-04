@@ -17,7 +17,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Student, StudentFilters, StudentFormData, Pagination } from '@/types'
-import { getStudents, createStudent, updateStudent, deleteStudent } from '@/lib/firestore'
+import { getStudents, createStudent, updateStudent, permanentlyDeleteStudent } from '@/lib/firestore'
 import { Plus, Users } from 'lucide-react'
 
 // หน้าหลักสำหรับแสดงรายชื่อนักศึกษา
@@ -25,6 +25,7 @@ export default function StudentsPage() {
   const router = useRouter()
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchLoading, setSearchLoading] = useState(false)
   const [filters, setFilters] = useState<StudentFilters>({
     search: '',
     major: '',
@@ -42,43 +43,67 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [formLoading, setFormLoading] = useState(false)
 
+  // Memoize filters เพื่อป้องกันการเปลี่ยนแปลงที่ไม่จำเป็น
+  const memoizedFilters = useMemo(() => filters, [
+    filters.search,
+    filters.major, 
+    filters.year,
+    filters.status
+  ])
+
   // โหลดข้อมูลนักศึกษา
-  const loadStudents = useCallback(async () => {
+  const loadStudents = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true)
-      const result = await getStudents(filters, {
+      if (isInitialLoad) {
+        setLoading(true)
+      } else {
+        setSearchLoading(true)
+      }
+      
+      const result = await getStudents(memoizedFilters, {
         page: pagination.page,
         limit: pagination.limit,
       })
       setStudents(result.students)
-      setPagination(result.pagination)
+      setPagination(prev => ({
+        ...prev,
+        total: result.pagination.total,
+        totalPages: result.pagination.totalPages
+      }))
     } catch (error: any) {
       toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูลนักศึกษา')
       console.error('Error loading students:', error)
     } finally {
-      setLoading(false)
+      if (isInitialLoad) {
+        setLoading(false)
+      } else {
+        setSearchLoading(false)
+      }
     }
-  }, [filters, pagination.page, pagination.limit])
+  }, [memoizedFilters, pagination.page, pagination.limit])
 
   // โหลดข้อมูลเมื่อ component mount หรือ filters เปลี่ยน
   useEffect(() => {
-    loadStudents()
-  }, [loadStudents])
+    let isInitialLoad = false
+    
+    // ตรวจสอบว่าเป็นการโหลดครั้งแรกหรือไม่
+    if (students.length === 0 && !searchLoading) {
+      isInitialLoad = true
+    }
+    
+    loadStudents(isInitialLoad)
+  }, [memoizedFilters, pagination.page, pagination.limit, loadStudents])
 
   // ฟังก์ชันสำหรับค้นหา
   const handleSearch = useCallback((query: string) => {
-    startTransition(() => {
-      setFilters(prev => ({ ...prev, search: query }))
-      setPagination(prev => ({ ...prev, page: 1 }))
-    })
+    setFilters(prev => ({ ...prev, search: query }))
+    setPagination(prev => ({ ...prev, page: 1 }))
   }, [])
 
-  // ฟังก์ชันสำหรับอัปเดตตัวกรอง
+  // ฟังก์ชันสำหรับอัปเดตตัวกรอง  
   const handleFiltersChange = useCallback((newFilters: StudentFilters) => {
-    startTransition(() => {
-      setFilters(newFilters)
-      setPagination(prev => ({ ...prev, page: 1 }))
-    })
+    setFilters(newFilters)
+    setPagination(prev => ({ ...prev, page: 1 }))
   }, [])
 
   // ฟังก์ชันสำหรับรีเซ็ตตัวกรอง
@@ -147,7 +172,7 @@ export default function StudentsPage() {
       
       setShowForm(false)
       setSelectedStudent(null)
-      loadStudents()
+      loadStudents(false)
     } catch (error: any) {
       toast.error(error.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
     } finally {
@@ -161,11 +186,11 @@ export default function StudentsPage() {
 
     try {
       setFormLoading(true)
-      await deleteStudent(selectedStudent.id)
+      await permanentlyDeleteStudent(selectedStudent.id)
       toast.success('ลบนักศึกษาสำเร็จ')
       setShowDeleteDialog(false)
       setSelectedStudent(null)
-      loadStudents()
+      loadStudents(false)
     } catch (error: any) {
       toast.error(error.message || 'เกิดข้อผิดพลาดในการลบข้อมูล')
     } finally {
@@ -188,7 +213,7 @@ export default function StudentsPage() {
   return (
     <ProtectedRoute>
       <Layout>
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-none">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -210,11 +235,13 @@ export default function StudentsPage() {
               <SearchBar
                 onSearch={handleSearch}
                 placeholder="ค้นหาตามชื่อ, รหัสนักศึกษา, หรือสาขาวิชา..."
+                debounceMs={100}
+                loading={searchLoading}
               />
             </div>
             <div className="lg:col-span-1">
               <FilterPanel
-                filters={filters}
+                filters={memoizedFilters}
                 onFiltersChange={handleFiltersChange}
                 onReset={handleResetFilters}
               />
@@ -222,13 +249,24 @@ export default function StudentsPage() {
           </div>
 
           {/* Students Table */}
-          <StudentTable
-            students={students}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            loading={loading}
-          />
+          <div className="relative">
+            <StudentTable
+              students={students}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              loading={loading && students.length === 0}
+            />
+            {/* Search Loading Overlay - แสดงเฉพาะเมื่อมีข้อมูลอยู่แล้ว */}
+            {searchLoading && students.length > 0 && (
+              <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center rounded-lg backdrop-blur-sm">
+                <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-lg">
+                  <LoadingSpinner size="sm" />
+                  <span className="text-sm text-gray-600">กำลังค้นหา...</span>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
@@ -286,9 +324,9 @@ export default function StudentsPage() {
               setSelectedStudent(null)
             }}
             onConfirm={handleConfirmDelete}
-            title="ยืนยันการลบ"
-            message={`คุณต้องการลบนักศึกษา ${selectedStudent?.name} หรือไม่?`}
-            confirmText="ลบ"
+            title="ยืนยันการลบนักศึกษา"
+            message={`คุณต้องการลบนักศึกษา "${selectedStudent?.name}" (${selectedStudent?.studentId}) ออกจากระบบอย่างถาวรหรือไม่?\n\n⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้`}
+            confirmText="ลบอย่างถาวร"
             cancelText="ยกเลิก"
             variant="danger"
             loading={formLoading}
